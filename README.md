@@ -3,9 +3,9 @@
 A Discord bot for forming balanced World of Warcraft Mythic+ groups using role reactions and spec-based logic.
 
 ## 🚀 Features
-- Easy group forming using reaction emojis
+- Easy group forming using reaction emojis 
 - Smart balancing: Heroism and Battle Res awareness
-- Advanced mode with spec-based input
+- Advanced mode with spec-based input using custom emojis added to a discord server
 - Custom UI with Discord buttons
 
 ## 🛠 Setup Instructions
