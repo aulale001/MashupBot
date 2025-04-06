@@ -68,6 +68,19 @@ async def on_ready() -> None:
     await tree.sync(guild=discord.Object(id=924284241141977089))
     print(f'{client.user} is now running')
 
+async def clear_bot_messages(channel: discord.TextChannel, bot_user: discord.User) -> int:
+    """
+    Deletes all messages sent by the bot in the specified channel.
+
+    Args:
+        channel (discord.TextChannel): The channel to search and purge.
+        bot_user (discord.User): The bot's user object (usually client.user).
+
+    Returns:
+        int: The number of messages deleted.
+    """
+    deleted = await channel.purge(limit=None, check=lambda msg: msg.author == bot_user)
+    return len(deleted)
 
 
 
@@ -119,15 +132,20 @@ class ButtonMash(discord.ui.View):
 
     @discord.ui.button(label='End Mashup', style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(content='Mashup has ended', view=None)
-        embedVar = Embed(
-            title="MYTHIC MASHUP",
-            description="Mashup has ended. Use the /mashup command to start a new event",
-            color=0x00ff00
-        )
-        await interaction.message.edit(embed=embedVar)
-        self.stop()
+        # Defer to avoid interaction timeout
+        try:
+            await interaction.response.defer(thinking=True)
+        except discord.InteractionResponded:
+            pass  # Interaction already acknowledged
+
+        # Delete all bot messages in the channel
+        await clear_bot_messages(interaction.channel, interaction.client.user)
+
+        # Clean up mashup state
+        users.clear()
+        players.clear()
         active_events.pop(interaction.guild.id, None)
+        self.stop()
 
 
 """Handle new role reaction added by a user. Adds or updates them in the players list."""
@@ -790,17 +808,19 @@ class Buttonstartup(discord.ui.View):
 
     @discord.ui.button(label='End Mashup', style=discord.ButtonStyle.red)
     async def end(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(content='Mashup has ended', view=None)
-        embedVar = Embed(
-            title="MYTHIC MASHUP",
-            description="Mashup has ended. Use the /advancedmashup command to start a new event",
-            color=0x00ff00
-        )
+        try:
+            await interaction.response.defer(thinking=True)
+        except discord.InteractionResponded:
+            pass
+
+        # Delete all bot messages in the channel
+        await clear_bot_messages(interaction.channel, interaction.client.user)
+
+        # Clean up memory/state
         users.clear()
-        players.clear()
-        await interaction.message.edit(embed=embedVar)
-        self.stop()
+        advancedPlayers.clear()
         active_events.pop(interaction.guild.id, None)
+        self.stop()
 
 
 @client.event
